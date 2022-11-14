@@ -1,0 +1,29 @@
+{
+    "manifest_version": 3,
+    "name": "Reviewer notes storage",
+    "version": "1.0",
+    "description": "Хранилище комментариев для проведения ревью работ студентов",
+    "icons": {
+        "60": "icons.png"
+    },
+
+    "content_scripts": [
+        {
+            "js": [ "app.js" ],
+            "matches": [ "https://admin.praktikum.yandex-team.ru/*" ]
+        }
+    ],
+
+    "web_accessible_resources": 
+    [{
+        "resources": [
+            "add_edit_comment_window.html",
+            "one_comment_template.html",
+            "styles.css"
+        ],
+        "matches": [
+            "https://admin.praktikum.yandex-team.ru/*"
+        ]
+    }]
+      
+}

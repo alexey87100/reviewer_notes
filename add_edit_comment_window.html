@@ -1,0 +1,215 @@
+<style>
+    .notes_row_head{
+        background-color:rgb(214, 247, 255);
+        display: grid; 
+        grid-template-columns: 49% 49%;
+        padding: 5px;
+        text-align: center;
+    }
+    .comment_from_db{
+        background-color:rgb(242, 242, 255);
+        display: grid; 
+        grid-template-columns: 3% 65% 11% 11% 8%;
+        padding: 5px;
+        text-align: center;
+    }
+    .new_comment{
+        background-color:rgb(213, 213, 255);
+        display: grid; 
+        grid-template-columns: 68% 20% 10%;
+        padding: 5px;
+        text-align: center;
+    }
+    .comment_from_db_header{
+        height: 30px;
+    }
+
+    .search_notes_window{
+        background-color:rgb(240, 255, 240);
+        display: grid; 
+        grid-template-columns: 98%;
+        padding: 5px;
+        text-align: center;
+    }
+    .green_button {
+        transition-duration: 0.4s;
+        padding: 16px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        background-color: white; 
+        color: black; 
+        border: 2px solid #f1fdf1;
+    }
+
+    .green_button:hover {
+        background-color: #f1fdf1;
+        color: rgb(43, 43, 43);
+    }
+    
+    .hidden_block{
+        display: none;
+    }
+    .small_green_button {
+        transition-duration: 0.4s;
+        padding: 2px 4px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 12px;
+        margin: 2px 1px;
+        cursor: pointer;
+        background-color: white; 
+        color: black; 
+        border: 2px solid #4CAF50;
+    }
+    .small_green_button:hover{
+        background-color: #4CAF50;
+        color: white;   
+    }
+
+    .small_red_button {
+        transition-duration: 0.4s;
+        padding: 2px 4px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 12px;
+        margin: 2px 1px;
+        cursor: pointer;
+        background-color: white; 
+        color: black; 
+        border: 2px solid red;
+    }
+    .small_red_button:hover{
+        background-color: red;
+        color: white;   
+    }
+
+    .scroll_window{
+        height: 300px; 
+        background: #fff;
+        border: 1px solid #C1C1C1;
+        overflow-y: scroll; 
+    }
+    .comment_from_db_row{
+        background-color: azure;
+    }
+    .add_comment_button{
+        text-align: center;
+    }
+    .search_results_text_window{
+        text-align: left;
+    }
+
+
+</style>
+
+<div class = "add_edit_comment_window">
+    <div class = "notes_row_head">
+        <div class="col templates_comment_button">
+            <button class="green_button">Шаблоны комментариев</button>
+        </div>
+        <div class="col save_current_comment">
+            <button class="green_button">Сохранить текущий комментарий</button>
+        </div>
+    </div>
+    <div class = "search_notes_window">
+        <div class="col">
+            <form>
+                <label>Поиск
+                  <input type="text" class = "text_to_search_field" size="30" placeholder="Введи больше 3 символов">
+                </label>
+                <label>Спринт №
+                    <select name="sprints" class="sprint_to_search">
+                        <option value="0">Все комментарии</option>
+                        <option value="1">1(ООП)</option>
+                        <option value="2">2(Джанга, старт)</option>
+                        <option value="3">3(Формы)</option>
+                        <option value="4">4(Тесты)</option>
+                        <option value="5">5(Подписки)</option>
+                        <option value="6">6(Бот)</option>
+                        <option value="7">7(API-1)</option>
+                        <option value="8">8(API-2)</option>
+                        <option value="9">9(Групповой)</option>
+                        <option value="10">10(Алго(игра,дома))</option>
+                        <option value="11">11(Алго(поиск))</option>
+                        <option value="12">12(Алго(Стек/Дек))</option>
+                        <option value="13">13(Деплой-1)</option>
+                        <option value="14">14(Деплой-2)</option>
+                        <option value="15">15(Диплом)</option>
+                    </select>
+                  </label>
+            </form>
+        </div>
+    </div>
+    <div class="notes_row_body existing_notes_window scroll_window">
+        <div class = "comment_from_db comment_from_db_header">
+            <div class = "col search_results_comment_id">
+                id
+            </div>
+            <div class = "col search_results_text_window">
+                Текст комментария
+            </div>
+            <div class = "col search_results_sprint_window">
+                Спринт
+            </div>
+            <div class = "col search_results_level_window">
+                Уровень
+            </div>
+            <div class = "col search_results_delete_window">
+                Удалить
+            </div>
+        </div>
+    </div>
+
+    <div class="new_comment save_comment_window hidden_block">
+        <div class = "col">
+            <form>
+                <label>Текст</label>
+                <textarea style ="width:100%;" rows = "8" class = "new_comment_textarea" placeholder="Введи комментарий тут и сохрани"></textarea>
+            </form>
+        </div>
+        <div class = "col">
+            <form>
+                <label>Спринт №
+                    <select name="sprints" class="sprint_select_add_comment" style="width: 165px;">
+                        <option value="0">Общий коммент</option>
+                        <option value="1">1(ООП)</option>
+                        <option value="2">2(Джанга, старт)</option>
+                        <option value="3">3(Формы)</option>
+                        <option value="4">4(Тесты)</option>
+                        <option value="5">5(Подписки)</option>
+                        <option value="6">6(Бот)</option>
+                        <option value="7">7(API-1)</option>
+                        <option value="8">8(API-2)</option>
+                        <option value="9">9(Групповой)</option>
+                        <option value="10">10(Алго(игра,дома))</option>
+                        <option value="11">11(Алго(поиск))</option>
+                        <option value="12">12(Алго(Стек/Дек))</option>
+                        <option value="13">13(Деплой-1)</option>
+                        <option value="14">14(Деплой-2)</option>
+                        <option value="15">15(Диплом)</option>
+                    </select>
+                  </label>
+                  <br>
+                  <br>
+                  <label>Уровень комментария
+                    <select name="sprints" class="level_select_add_comment" style="width: 165px;">
+                        <option selected value ="0">Надо исправить</option>
+                        <option value ="1">Можно лучше</option>
+                        <option value ="2">Отлично!</option>
+                    </select>
+                  </label>
+            </form>
+        </div>
+        <div class = "col">
+            <div class="col save_current_comment_to_DB" style="padding-top: 50px;">
+                <button class="small_green_button">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
