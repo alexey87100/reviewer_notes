@@ -87,6 +87,9 @@ function openSaveCommentWindow(reviewerWindow){
     let newCommentTextArea = saveCommentWindow.querySelector(".new_comment_textarea");
     let newCommentText = saveCommentWindow.parentElement.parentElement.parentElement.querySelector(".comment-editor__textarea").value;
     newCommentTextArea.value = newCommentText;
+
+    let newCommentSelector = saveCommentWindow.querySelector(".level_select_add_comment");
+    newCommentSelector.value = getCurrentCommentLevel(saveCommentWindow);
 }
 // Переключение на вкладку "Шаблоны комментариев"
 function openTemplatesCommentWindow(reviewerWindow){
@@ -99,6 +102,17 @@ function openTemplatesCommentWindow(reviewerWindow){
     fillReviewerCommentsWindow(reviewerWindow, key="")
 
 
+}
+
+// Определение уровня текущего комментария
+function getCurrentCommentLevel(saveCommentWindow){
+    let levelSelectorBar = saveCommentWindow.parentElement.parentElement.parentElement.querySelectorAll(".radio__input");
+    for (let commentLevel = 0; commentLevel < 3; commentLevel++) {
+        let inputValue = levelSelectorBar[commentLevel];
+        if (inputValue.getAttribute("aria-checked") == "true"){
+            return commentLevel;
+        }
+    }
 }
 
 // Подключение к БД коментариев
