@@ -44,6 +44,8 @@ function openReviewTemplatesWindow(elem){
         setTimeout(() => {  onloadAddScriptOnSaveCommentButton(reviewerWindow); 
             onloadAddScriptOnTemplatesCommentButton(reviewerWindow); 
             onloadAddScriptOnTemplatesCommentSaveButton(reviewerWindow);
+            onloadAddScriptOnTemplatesCommentExportDB(reviewerWindow);
+            onloadAddScriptOnTemplatesCommentImportDB(reviewerWindow);
             addEventListenerToSearcheField(reviewerWindow);
             addEventListenerToSprintSearchSelector(reviewerWindow);
             fillReviewerCommentsWindow(reviewerWindow, key="")
@@ -73,6 +75,79 @@ function onloadAddScriptOnTemplatesCommentSaveButton(reviewerWindow){
     templateCommentButton = reviewerWindow.querySelector('.save_current_comment_to_DB');
     templateCommentButton.onclick = function(){
         addNewCommentToDatabase(reviewerWindow);
+    }
+}
+
+function onloadAddScriptOnTemplatesCommentExportDB(reviewerWindow) {
+    let templateCommentButton = reviewerWindow.querySelector('.export_DB');
+    templateCommentButton.onclick = function(){
+        db.readTransaction(function(tx){
+            tx.executeSql(
+                'SELECT * FROM commentsTable',
+                [],
+                function(tx, results){
+                    let db_list = [];
+                    for (let i=0; i < results.rows.length; i++) {
+                        db_list.push(results.rows[i]);
+                    }
+                    download('dump.json', JSON.stringify(db_list));
+                },
+                function(tx, error){
+                    console.log(error);
+                }
+            );
+        });
+    }
+}
+
+function download(filename, text) {
+    let element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    reviewerWindow.appendChild(element);
+    element.click();
+    reviewerWindow.removeChild(element);
+}
+
+function onloadAddScriptOnTemplatesCommentImportDB(reviewerWindow) {
+    let templateCommentButton = reviewerWindow.querySelector('.import_DB');
+    templateCommentButton.onclick = function(){
+        let element = document.createElement('input');
+        element.setAttribute('type', 'file');
+        element.style.display = 'none';
+        element.addEventListener('change', (e) => {
+            let t = e.target.files[0].text();
+            t.then((result) => importDB(result, element));
+        });
+        element.click();
+    }
+}
+
+function importDB(result, element) {
+    let res_json = JSON.parse(result);
+    let db = connectDB();
+    for (const row of res_json) {
+        db.transaction(function(tx){
+            tx.executeSql(
+                "INSERT INTO commentsTable (text, sprint, level) values(?, ?, ?)",
+                [row['text'], row['sprint'], row['level']],
+                function(tx, error){
+                    tx.executeSql(
+                        "CREATE TABLE commentsTable (id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT, sprint SMALLINT, level SMALLINT)",
+                        [],
+                        function (tx, result){
+                            tx.executeSql(
+                                "INSERT INTO answers (game_id, question_id, answer0, answer1, answer2, answer3, right_answer) values (?, ?, ?, ?, ?, ?, ?)",
+                                [row['game_id'], row['question_id'], row['answer0'], row['answer1'], row['answer2'], row['answer3'], row['right_answer']]
+                            );
+                        },
+                        function (tx, error){
+                        }
+                    );
+                }
+            );
+        });
     }
 }
 
