@@ -414,6 +414,12 @@ function getSprintNumber(){
         case "Как сдавать проект":
             sprintNumber = 15;
             break;
+        case "Финальный проект спринта: Блогикум":
+            sprintNumber = 16;
+            break;
+        case "Финальный проект спринта: публикации для Блогикум":
+            sprintNumber = 17;
+            break;
     }
     return sprintNumber
 }
