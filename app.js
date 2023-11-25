@@ -408,7 +408,7 @@ function getSprintNumber(){
         case "Проект спринта: запуск docker-compose":
             sprintNumber = 13;
             break;
-        case "Проект спринта: CI и CD проекта api_yamdb":
+        case "Финальный проект: контейнеры и CI/CD для Kittygram":
             sprintNumber = 14;
             break;
         case "Как сдавать проект":
