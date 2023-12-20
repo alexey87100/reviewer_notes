@@ -441,6 +441,9 @@ function getSprintNumber(){
         case "Финальный проект спринта: «Изгиб Питона»":
             sprintNumber = 25;
             break;
+        case "Финальное задание спринта: служба доставки":
+            sprintNumber = 26;
+            break;
     }
     return sprintNumber
 }
