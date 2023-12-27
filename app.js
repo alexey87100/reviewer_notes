@@ -444,6 +444,9 @@ function getSprintNumber(){
         case "Финальное задание спринта: служба доставки":
             sprintNumber = 26;
             break;
+        case "Финальное задание спринта: Шифрованные инструкции":
+            sprintNumber = 27;
+            break;
     }
     return sprintNumber
 }
