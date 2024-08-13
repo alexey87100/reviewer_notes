@@ -423,6 +423,9 @@ function getSprintNumber(){
         case "Финальный проект спринта: Vice Versa":
             sprintNumber = 19;
             break;
+        case "Финальный проект спринта: доработка Блогикум":
+            sprintNumber = 19;
+            break;
         case "Проект спринта: парсер PEP":
             sprintNumber = 20;
             break;
