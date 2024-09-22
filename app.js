@@ -393,6 +393,9 @@ function getSprintNumber(){
         case "Проект спринта: CRUD для Yatube":
             sprintNumber = 7;
             break;
+        case "Финальный проект спринта: CRUD для Yatube":
+            sprintNumber = 7;
+            break;
         case "Проект спринта: API для Yatube":
             sprintNumber = 8;
             break;
