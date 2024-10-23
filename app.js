@@ -405,6 +405,9 @@ function getSprintNumber(){
         case "Проект спринта: Yamdb":
             sprintNumber = 9;
             break;
+        case "Проект: Yamdb":
+            sprintNumber = 9;
+            break;
         case "Задание спринта: введение в алгоритмы":
             sprintNumber = 10;
             break;
@@ -421,9 +424,6 @@ function getSprintNumber(){
             sprintNumber = 14;
             break;
         case "Как сдавать проект":
-            sprintNumber = 15;
-            break;
-        case "Проект: Yamdb":
             sprintNumber = 15;
             break;
         case "Финальный проект спринта: Блогикум":
