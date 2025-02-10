@@ -465,6 +465,9 @@ function getSprintNumber(){
         case "Финальное задание спринта: шифрованные инструкции":
             sprintNumber = 27;
             break;
+        case "Финальное задание: «Шифрованные инструкции»":
+            sprintNumber = 27;
+            break;
     }
     return sprintNumber
 }
