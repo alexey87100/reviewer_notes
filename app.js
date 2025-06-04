@@ -1,22 +1,135 @@
-// Ждет событие "Создание окна для оставления комментария" и добавляет кнопку
-window.document.addEventListener('DOMNodeInserted', function(event) {
-    // Событие - создалось новое окно или открылось окно на редактирование существующего комментария
-    if (event.target.className == "source-tree__line-comment-wrapper" || event.target.className =="source-tree__comment-editor"){
-        const newCommentWindow = event.target.querySelector(".comment-editor__top-bar");
-        if (!newCommentWindow.classList.contains('has_review_button')){
-            let newDiv = document.createElement('div');
-            newDiv.className = 'button button_size_l button_type_default button_theme_light button_view_transparent review_button add_comment_button';
-            newDiv.innerHTML = 'Шаблоны ответов';
-            newCommentWindow.append(newDiv);
-            newCommentWindow.classList.add('has_review_button');
-            openReviewTemplatesWindow(newCommentWindow);
-            newCommentWindow.lastChild.onclick = function(){
-                openReviewTemplatesWindow(newCommentWindow);
-            };
-            addEventListenerToBaseCommentField(event.target);
-        }
-    };
+const db = new Dexie("myCommentsDB");
+db.version(1).stores({
+    commentsTable: '++id, text, sprint, level'
 });
+
+// Use MutationObserver instead of deprecated DOMNodeInserted
+const observer = new MutationObserver((mutationsList) => {
+    for (const mutation of mutationsList) {
+        for (const node of mutation.addedNodes) {
+            if (!(node instanceof HTMLElement)) continue;
+
+            if (
+                node.classList.contains("source-tree__line-comment-wrapper") ||
+                node.classList.contains("source-tree__comment-editor")
+            ) {
+                const newCommentWindow = node.querySelector(".comment-editor__top-bar");
+                if (newCommentWindow && !newCommentWindow.classList.contains("has_review_button")) {
+                    let newDiv = document.createElement('div');
+                    newDiv.className = 'button button_size_l button_type_default button_theme_light button_view_transparent review_button add_comment_button';
+                    newDiv.innerHTML = 'Шаблоны ответов';
+                    newCommentWindow.append(newDiv);
+                    newCommentWindow.classList.add('has_review_button');
+                    openReviewTemplatesWindow(newCommentWindow);
+                    newCommentWindow.lastChild.onclick = function(){
+                        openReviewTemplatesWindow(newCommentWindow);
+                    };
+                    addEventListenerToBaseCommentField(node);
+                }
+            }
+        }
+    }
+});
+
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
+
+// Replaces connectDB and WebSQL logic with Dexie
+async function addNewCommentToDatabase(reviewerWindow){
+    let text = reviewerWindow.querySelector(".new_comment_textarea").value.replaceAll("\n", "<br>");
+    let sprint = parseInt(reviewerWindow.querySelector(".sprint_select_add_comment").value);
+    let level = parseInt(reviewerWindow.querySelector(".level_select_add_comment").value);
+    if (!text){
+        return notificationCommentFailedSaveMessage("Нельзя сохранить комментарий без текста");
+    }
+    try {
+        await db.commentsTable.add({ text, sprint, level });
+        notificationCommentSavedMessage(reviewerWindow, "Комментарий сохранен");
+    } catch (err) {
+        alert("Ошибка сохранения комментария: " + err);
+    }
+}
+
+function onloadAddScriptOnTemplatesCommentExportDB(reviewerWindow) {
+    const button = reviewerWindow.querySelector('.export_DB');
+    button.onclick = async function() {
+        const data = await db.commentsTable.toArray();
+        download('dump.json', JSON.stringify(data));
+    }
+}
+
+function onloadAddScriptOnTemplatesCommentImportDB(reviewerWindow) {
+    const button = reviewerWindow.querySelector('.import_DB');
+    button.onclick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.style.display = 'none';
+        input.addEventListener('change', async (e) => {
+            const content = await e.target.files[0].text();
+            const data = JSON.parse(content);
+            await db.commentsTable.bulkAdd(data);
+            alert("Импорт завершен успешно");
+        });
+        input.click();
+    }
+}
+
+async function fillReviewerCommentsWindow(reviewerWindow, key = "") {
+    const search = reviewerWindow.querySelector(".text_to_search_field").value + key;
+    const sprint = parseInt(reviewerWindow.querySelector(".sprint_to_search").value);
+
+    clearCommentsSearchWindow(reviewerWindow);
+
+    let results = [];
+    if (sprint === 0) {
+        results = await db.commentsTable.filter(row => row.text.toLowerCase().includes(search.toLowerCase())).toArray();
+    } else {
+        results = await db.commentsTable.filter(row => row.text.toLowerCase().includes(search.toLowerCase()) && (row.sprint === sprint || row.sprint === 0)).toArray();
+    }
+
+    printOneFoundCommentToReviewerCommentWindow(reviewerWindow, results);
+}
+
+function printOneFoundCommentToReviewerCommentWindow(reviewerWindow, result){
+    for(let i = 0; i < result.length; i++) {
+        const row = result[i];
+        let newText = row.text.replaceAll("<br>", "\n").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"','&quot;');
+        let newDiv = document.createElement('div');
+
+        fetch(chrome.runtime.getURL('/one_comment_template.html')).then(r => r.text()).then(html => {
+            html = html.replace('comment_visible_id', row.id);
+            html = html.replace('comment_text', newText);
+            html = html.replace('comment_sprint', row.sprint);
+            html = html.replace('comment_level', row.level);
+            newDiv.innerHTML = html;
+            reviewerWindow.querySelector(".notes_row_body").append(newDiv);
+        });
+    }
+    setTimeout(() => {
+        addOnclickScriptToRemoveCommentButtons(reviewerWindow);
+        addOnclickScriptToTextField(reviewerWindow);
+    }, 100);
+}
+
+async function removeCommentFromDB(button){
+    const id = parseInt(button.parentElement.parentElement.querySelector(".search_results_comment_id").innerText);
+    await db.commentsTable.delete(id);
+    button.parentElement.parentElement.remove();
+    notificationCommentDeletedMessage("Комментарий удален");
+}
+
+function download(filename, text) {
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+}
+
 
 // Открывает окно заметок ревьюера и вешает скрипты на кнопки
 function openReviewTemplatesWindow(elem){
@@ -28,12 +141,12 @@ function openReviewTemplatesWindow(elem){
     }
     else{
         let newDiv = document.createElement('div');
-        
+
         fetch(chrome.runtime.getURL('/add_edit_comment_window.html')).then(r => r.text()).then(html => {
             let sprintNumber = getSprintNumber();
             let lookupValue = '<option value="' + sprintNumber  + '">';
             let replaceTo = '<option selected value="' + sprintNumber + '">';
-            
+
             html = html.replaceAll(lookupValue,replaceTo);
             newDiv.innerHTML = html;
         });
@@ -41,8 +154,8 @@ function openReviewTemplatesWindow(elem){
         elemToAdd.append(newDiv);
         elemToAdd.classList.add('has_opened_reviewer_notes_window');
         reviewerWindow = elemToAdd.querySelector('.reviewer_notes');
-        setTimeout(() => {  onloadAddScriptOnSaveCommentButton(reviewerWindow); 
-            onloadAddScriptOnTemplatesCommentButton(reviewerWindow); 
+        setTimeout(() => {  onloadAddScriptOnSaveCommentButton(reviewerWindow);
+            onloadAddScriptOnTemplatesCommentButton(reviewerWindow);
             onloadAddScriptOnTemplatesCommentSaveButton(reviewerWindow);
             onloadAddScriptOnTemplatesCommentExportDB(reviewerWindow);
             onloadAddScriptOnTemplatesCommentImportDB(reviewerWindow);
@@ -78,78 +191,39 @@ function onloadAddScriptOnTemplatesCommentSaveButton(reviewerWindow){
     }
 }
 
-function onloadAddScriptOnTemplatesCommentExportDB(reviewerWindow) {
-    let templateCommentButton = reviewerWindow.querySelector('.export_DB');
-    templateCommentButton.onclick = function(){
-        db.readTransaction(function(tx){
-            tx.executeSql(
-                'SELECT * FROM commentsTable',
-                [],
-                function(tx, results){
-                    let db_list = [];
-                    for (let i=0; i < results.rows.length; i++) {
-                        db_list.push(results.rows[i]);
-                    }
-                    download('dump.json', JSON.stringify(db_list));
-                },
-                function(tx, error){
-                    console.log(error);
-                }
-            );
-        });
+
+
+function importDB(result) {
+    let res_json;
+
+    try {
+        res_json = JSON.parse(result);
+    } catch (e) {
+        alert("Ошибка парсинга JSON");
+        return;
     }
+
+    const valid = res_json.every(row =>
+        typeof row.text === 'string' &&
+        typeof row.sprint === 'number' &&
+        typeof row.level === 'number'
+    );
+
+    if (!valid) {
+        alert("Некорректный формат данных");
+        return;
+    }
+
+    db.commentsTable.bulkAdd(res_json)
+        .then(() => {
+            alert("Импорт завершен успешно");
+        })
+        .catch((err) => {
+            console.error("Ошибка при импорте:", err);
+            alert("Ошибка при импорте данных в IndexedDB");
+        });
 }
 
-function download(filename, text) {
-    let element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-    element.setAttribute('download', filename);
-    element.style.display = 'none';
-    reviewerWindow.appendChild(element);
-    element.click();
-    reviewerWindow.removeChild(element);
-}
-
-function onloadAddScriptOnTemplatesCommentImportDB(reviewerWindow) {
-    let templateCommentButton = reviewerWindow.querySelector('.import_DB');
-    templateCommentButton.onclick = function(){
-        let element = document.createElement('input');
-        element.setAttribute('type', 'file');
-        element.style.display = 'none';
-        element.addEventListener('change', (e) => {
-            let t = e.target.files[0].text();
-            t.then((result) => importDB(result, element));
-        });
-        element.click();
-    }
-}
-
-function importDB(result, element) {
-    let res_json = JSON.parse(result);
-    let db = connectDB();
-    for (const row of res_json) {
-        db.transaction(function(tx){
-            tx.executeSql(
-                "INSERT INTO commentsTable (text, sprint, level) values(?, ?, ?)",
-                [row['text'], row['sprint'], row['level']],
-                function(tx, error){
-                    tx.executeSql(
-                        "CREATE TABLE commentsTable (id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT, sprint SMALLINT, level SMALLINT)",
-                        [],
-                        function (tx, result){
-                            tx.executeSql(
-                                "INSERT INTO answers (game_id, question_id, answer0, answer1, answer2, answer3, right_answer) values (?, ?, ?, ?, ?, ?, ?)",
-                                [row['game_id'], row['question_id'], row['answer0'], row['answer1'], row['answer2'], row['answer3'], row['right_answer']]
-                            );
-                        },
-                        function (tx, error){
-                        }
-                    );
-                }
-            );
-        });
-    }
-}
 
 // Переключение на вкладку "Сохранить текущий комментарий"
 function openSaveCommentWindow(reviewerWindow){
@@ -192,27 +266,9 @@ function getCurrentCommentLevel(saveCommentWindow){
 
 // Подключение к БД коментариев
 function connectDB(){
-    db = openDatabase("myCommentsDB", "0.1", "Reviewer comments storage", 200000);
-    if(!db){alert("Не удается пеодключиться к базе комментариев.");}
-    return db
-}
-
-// Сохранение комментария в БД
-function addNewCommentToDatabase(reviewerWindow){
-    let text = reviewerWindow.querySelector(".new_comment_textarea").value.replaceAll("\n", "<br>");
-    let sprint = reviewerWindow.querySelector(".sprint_select_add_comment").value;
-    let level = reviewerWindow.querySelector(".level_select_add_comment").value;
-    if (!text){
-        return notificationCommentFailedSaveMessage("Нельзя сохранить комментарий без текста");
-    };
-    let db = connectDB();
-    db.transaction(function(tx) {
-        tx.executeSql("INSERT INTO commentsTable (text, sprint, level) values(?, ?, ?)", [text, sprint, level], function (result) {  notificationCommentSavedMessage(reviewerWindow, "Комментарий сохранен"); }, function (tx, error) {
-        tx.executeSql("CREATE TABLE commentsTable (id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT, sprint SMALLINT, level SMALLINT)", [], function (tx, result){
-            tx.executeSql("INSERT INTO commentsTable (text, sprint, level) values(?, ?, ?)", [text, sprint, level],function(result){notificationCommentSavedMessage(reviewerWindow, "Комментарий сохранен");},function (tx, error) {alert("Ошибка сохранения комментария")})
-
-        },function (tx, error){alert("Ошибка создания БД" + error)} );
-    })});
+    const _db = openDatabase("myCommentsDB", "0.1", "Reviewer comments storage", 200000);
+    if(!_db){alert("Не удается пеодключиться к базе комментариев.");}
+    return _db
 }
 
 // Уведомление о сохранении комментария (смена текста на кнопке)
@@ -230,7 +286,7 @@ function notificationCommentFailedSaveMessage(message){
 
 // Уведомление об удалении комменария
 function notificationCommentDeletedMessage(message){
-   
+
 }
 
 // Навешивание на поле поиска комментария скрипта прослушивания на поле "Шаблоны комментариев"
@@ -263,28 +319,6 @@ function addEventListenerToSprintSearchSelector(reviewerWindow){
     });
 }
 
-// Заполнение окна с шаблонами комментариев с текущей маской поиска и маской спринта на вкладке "Шаблоны комментариев"
-function fillReviewerCommentsWindow(reviewerWindow, key){
-    let textToSearch = "%" + reviewerWindow.querySelector(".text_to_search_field").value + key + "%";
-    let sprintToSearch = reviewerWindow.querySelector(".sprint_to_search").value;
-    clearCommentsSearchWindow(reviewerWindow);
-
-
-    let db = connectDB();
-    db.transaction(function(tx) {
-        if (sprintToSearch == 0){
-            tx.executeSql("SELECT * FROM commentsTable WHERE text LIKE ? ORDER BY sprint ASC, text ASC", [textToSearch,], function (tx, result) {
-                printOneFoundCommentToReviewerCommentWindow(reviewerWindow, result);
-            }, function (tx, error){alert("Ошибка запроса в БД при получении комментариев, либо еще не созданы коментарии")});
-        }
-        else{
-            tx.executeSql("SELECT * FROM commentsTable WHERE (text LIKE ? and (sprint=? OR sprint=0)) ORDER BY sprint DESC, text ASC", [textToSearch, sprintToSearch], function (tx, result) {
-                printOneFoundCommentToReviewerCommentWindow(reviewerWindow, result);
-            }, function (tx, error){alert("Ошибка запроса в БД при получении комментариев, либо еще не созданы коментарии")});
-        }
-    });
-}
-
 // Очистка от старых результатов окна с результатами поиска на вкладке "Шаблоны комментариев"
 function clearCommentsSearchWindow(reviewerWindow){
     let currentComments = reviewerWindow.querySelectorAll(".comment_from_db_row");
@@ -292,30 +326,6 @@ function clearCommentsSearchWindow(reviewerWindow){
         let elemToRemove = elem.parentElement;
         elemToRemove.parentNode.removeChild(elemToRemove);
     });
-}
-
-// Вывод в окно результатов поиска одно конкретного комментария на вкладке "Шаблоны комментариев"
-function printOneFoundCommentToReviewerCommentWindow(reviewerWindow, result){
-    for(var i = 0; i < result.rows.length; i++) {
-        let newText = result.rows.item(i)['text'].replaceAll("<br>", "\n").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"','&quot;');
-        let newSprint = result.rows.item(i)['sprint'];
-        let newId = result.rows.item(i)['id'];
-        let newLevel = result.rows.item(i)['level'];
-
-        let newDiv = document.createElement('div');
-
-        fetch(chrome.runtime.getURL('/one_comment_template.html')).then(r => r.text()).then(html => {
-            html = html.replace('comment_visible_id',newId);
-            html = html.replace('comment_text',newText);
-            html = html.replace('comment_sprint',newSprint);
-            html = html.replace('comment_level',newLevel);
-            newDiv.innerHTML = html;
-        });
-
-        reviewerWindow.querySelector(".notes_row_body").append(newDiv);
-    
-    };
-    setTimeout(() => {addOnclickScriptToRemoveCommentButtons(reviewerWindow); addOnclickScriptToTextField(reviewerWindow)}, 100);
 }
 
 // Навешивание скрипта прослушивания на поле текста комментария в окне результатов поиска на вкладке "Шаблоны комментариев"
@@ -348,19 +358,6 @@ function addOnclickScriptToRemoveCommentButtons(){
             removeCommentFromDB(elem);
         }
     });
-}
-
-// Удаление комментария из БД из вкладки "Шаблоны комментариев"
-function removeCommentFromDB(button){
-    let db = connectDB();
-    commentIdToRemove = button.parentElement.parentElement.querySelector(".search_results_comment_id").innerHTML;
-    db.transaction(function(tx) {
-        tx.executeSql("DELETE FROM commentsTable WHERE id = ?", [commentIdToRemove,], 
-        function (tx, result) {notificationCommentDeletedMessage("Комментарий удален")}, 
-        function (tx, error){alert("Ошибка запроса в БД при удалении комментария")});
-        });
-    commentRowToRemoveFromWindow = button.parentElement.parentElement;
-    commentRowToRemoveFromWindow.parentNode.removeChild(commentRowToRemoveFromWindow);
 }
 
 // Получение номера спринта
@@ -467,6 +464,9 @@ function getSprintNumber(){
             break;
         case "Финальное задание: «Шифрованные инструкции»":
             sprintNumber = 27;
+            break;
+        case "Сдача итогового проекта «Фудграм»":
+            sprintNumber = 28;
             break;
     }
     return sprintNumber

@@ -2,6 +2,8 @@
     "manifest_version": 3,
     "name": "Reviewer notes storage",
     "version": "1.0",
+    "permissions": ["storage"],
+    "host_permissions": ["https://admin.praktikum.yandex-team.ru/*"],
     "description": "Хранилище комментариев для проведения ревью работ студентов",
     "icons": {
         "60": "icons.png"
@@ -9,8 +11,9 @@
 
     "content_scripts": [
         {
-            "js": [ "app.js" ],
-            "matches": [ "https://admin.praktikum.yandex-team.ru/*" ]
+            "js": [ "dexie.min.js", "app.js" ],
+            "matches": [ "https://admin.praktikum.yandex-team.ru/*" ],
+            "run_at": "document_idle"
         }
     ],
 
