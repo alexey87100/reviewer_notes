@@ -447,6 +447,9 @@ function getSprintNumber(){
         case "Финальный проект спринта: сервис YaCut":
             sprintNumber = 22;
             break;
+        case "Финальный проект YaCut":
+            sprintNumber = 22;
+            break;
         case "Финальный проект спринта: приложение QRKot":
             sprintNumber = 23;
             break;
