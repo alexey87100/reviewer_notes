@@ -444,6 +444,9 @@ function getSprintNumber(){
         case "Финальный проект спринта: асинхронный парсер PEP":
             sprintNumber = 21;
             break;
+        case "Финальный проект спринта. Асинхронный парсер PEP":
+            sprintNumber = 21;
+            break;
         case "Финальный проект спринта: сервис YaCut":
             sprintNumber = 22;
             break;
