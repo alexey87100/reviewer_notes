@@ -456,6 +456,9 @@ function getSprintNumber(){
         case "Финальный проект спринта: приложение QRKot":
             sprintNumber = 23;
             break;
+        case "Финальный проект: приложение QRKot, часть I":
+            sprintNumber = 23;
+            break;
         case "Финальный проект спринта: отчёт в Google Sheets для QRKot":
             sprintNumber = 24;
             break;
