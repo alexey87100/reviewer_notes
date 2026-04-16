@@ -480,6 +480,9 @@ function getSprintNumber(){
         case "Сдача итогового проекта «Фудграм»":
             sprintNumber = 28;
             break;
+        case "Сдача итогового проекта":
+            sprintNumber = 29;
+            break;
     }
     return sprintNumber
 }
