@@ -369,6 +369,9 @@ function getSprintNumber(){
         case "Проект спринта: модуль фитнес-трекера":
             sprintNumber = 1;
             break;
+        case "Сдача проекта по спринту 1":
+            sprintNumber = 0;
+            break;
         case "Проект спринта: сообщества":
             sprintNumber = 2;
             break;
