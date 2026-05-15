@@ -369,9 +369,6 @@ function getSprintNumber(){
         case "Проект спринта: модуль фитнес-трекера":
             sprintNumber = 1;
             break;
-        case "Сдача проекта по спринту 1":
-            sprintNumber = 0;
-            break;
         case "Проект спринта: сообщества":
             sprintNumber = 2;
             break;
@@ -485,6 +482,9 @@ function getSprintNumber(){
             break;
         case "Сдача итогового проекта":
             sprintNumber = 29;
+            break;
+        case "Сдача проекта по спринту 1":
+            sprintNumber = 30;
             break;
     }
     return sprintNumber
