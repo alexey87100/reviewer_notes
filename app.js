@@ -486,6 +486,9 @@ function getSprintNumber(){
         case "Сдача проекта по спринту 1":
             sprintNumber = 30;
             break;
+        case "Сдача проекта «Изгиб Питона»":
+            sprintNumber = 25;
+            break;
     }
     return sprintNumber
 }
