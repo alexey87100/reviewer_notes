@@ -489,6 +489,9 @@ function getSprintNumber(){
         case "Сдача проекта «Изгиб Питона»":
             sprintNumber = 25;
             break;
+        case "Финальный проект спринта: отчёт в Яндекс Диск для QRKot":
+            sprintNumber = 24;
+            break;
     }
     return sprintNumber
 }
